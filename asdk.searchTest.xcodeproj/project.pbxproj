@@ -316,7 +316,7 @@
 				INFOPLIST_FILE = asdk.searchTest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				OTHER_SWIFT_FLAGS = "-D USE_UIKIT";
+				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.izimobile.asdk-searchTest";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -330,7 +330,7 @@
 				INFOPLIST_FILE = asdk.searchTest/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				OTHER_SWIFT_FLAGS = "-D USE_UIKIT";
+				OTHER_SWIFT_FLAGS = "";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.izimobile.asdk-searchTest";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

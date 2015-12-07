@@ -9,6 +9,12 @@
 import UIKit
 import AsyncDisplayKit
 
+/* Other Swift Flags
+ *
+ * -D USE_UIKIT     // add this to the target build settings to use UITableView instead of ASTableView
+ *
+ */
+
 let sectionTitles = [UITableViewIndexSearch, "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 let data = ["Victoria Graden", "Cheree Sherk", "Jorge Darcy", "Nedra Noles", "Lan Proctor", "Forrest Strain", "Erlinda Worthy", "Jimmy Slezak", "Fe Norling", "Tinisha Pichardo", "Bethanie Larochelle", "Natasha Mccloskey", "Shanti Perkinson", "Valencia Palmisano", "Erin Sorg", "Brad Minger", "Akilah Verde", "Eda Takacs", "Yee Roby", "Christoper Galligan"]
 
@@ -113,16 +119,16 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
                 let section = oldSortedKeys.indexOf(key)!
                 if let currentSection = self.sections[key]
                 {
-                    let oldFriends = sectionObject.1
-                    for (index, friend) in oldFriends.enumerate()
+                    let oldData = sectionObject.1
+                    for (index, obj) in oldData.enumerate()
                     {
-                        if currentSection.indexOf(friend) == nil
+                        if currentSection.indexOf(obj) == nil
                         {
                             indexPathsToDelete.append(NSIndexPath(forRow: index, inSection: section))
                         }
                     }
                 }
-                else
+                else if !sectionsToDelete.contains(section)
                 {
                     sectionsToDelete.addIndex(section)
                 }
@@ -133,29 +139,21 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
                 let section = self.sortedKeys.indexOf(key)!
                 if let oldSection = oldSections[key]
                 {
-                    let friends = sectionObject.1
-                    for (index, friend) in friends.enumerate()
+                    let data = sectionObject.1
+                    for (index, obj) in data.enumerate()
                     {
-                        if oldSection.indexOf(friend) == nil
+                        if oldSection.indexOf(obj) == nil
                         {
                             indexPathsToInsert.append(NSIndexPath(forRow: index, inSection: section))
                         }
                     }
                 }
-                else
+                else if !sectionsToInsert.contains(section)
                 {
                     sectionsToInsert.addIndex(section)
-                    let friends = sectionObject.1
-                    for i in 0..<friends.count
-                    {
-                        indexPathsToInsert.append(NSIndexPath(forRow: i, inSection: section))
-                    }
                 }
             }
-//            NSLog("indexPathsToDelete: \(indexPathsToDelete)")
-//            NSLog("sectionsToDelete: \(sectionsToDelete)")
-//            NSLog("sectionsToInsert: \(sectionsToInsert)")
-//            NSLog("indexPathsToInsert: \(indexPathsToInsert)")
+            
             UIView.setAnimationsEnabled(false)
             tableView.beginUpdates()
             if indexPathsToDelete.count > 0
