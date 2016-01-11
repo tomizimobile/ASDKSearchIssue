@@ -16,7 +16,30 @@ import AsyncDisplayKit
  */
 
 let sectionTitles = [UITableViewIndexSearch, "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-let data = ["Victoria Graden", "Cheree Sherk", "Jorge Darcy", "Nedra Noles", "Lan Proctor", "Forrest Strain", "Erlinda Worthy", "Jimmy Slezak", "Fe Norling", "Tinisha Pichardo", "Bethanie Larochelle", "Natasha Mccloskey", "Shanti Perkinson", "Valencia Palmisano", "Erin Sorg", "Brad Minger", "Akilah Verde", "Eda Takacs", "Yee Roby", "Christoper Galligan"]
+let data = randomNames(1000)
+let realNames = ["Victoria Graden", "Cheree Sherk", "Jorge Darcy", "Nedra Noles", "Lan Proctor", "Forrest Strain", "Erlinda Worthy", "Jimmy Slezak", "Fe Norling", "Tinisha Pichardo", "Bethanie Larochelle", "Natasha Mccloskey", "Shanti Perkinson", "Valencia Palmisano", "Erin Sorg", "Brad Minger", "Akilah Verde", "Eda Takacs", "Yee Roby", "Christoper Galligan"]
+
+func randomNames(count: Int) -> [String]
+{
+    var names = [String]()
+    for _ in 0..<count
+    {
+        var firstName = String(UnicodeScalar(65+arc4random_uniform(26)))
+        for _ in 0..<3+arc4random_uniform(7)
+        {
+            firstName += String(UnicodeScalar(97+arc4random_uniform(26)))
+        }
+
+        var lastName = String(UnicodeScalar(65+arc4random_uniform(26)))
+        for _ in 0..<5+arc4random_uniform(10)
+        {
+            lastName += String(UnicodeScalar(97+arc4random_uniform(26)))
+        }
+        
+        names.append(firstName+" "+lastName)
+    }
+    return names
+}
 
 class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelegate, UITableViewDataSource, UITableViewDelegate, UISearchBarDelegate {
     
