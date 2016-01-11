@@ -18,6 +18,7 @@ import AsyncDisplayKit
 let sectionTitles = [UITableViewIndexSearch, "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
 let data = randomNames(1000)
 let realNames = ["Victoria Graden", "Cheree Sherk", "Jorge Darcy", "Nedra Noles", "Lan Proctor", "Forrest Strain", "Erlinda Worthy", "Jimmy Slezak", "Fe Norling", "Tinisha Pichardo", "Bethanie Larochelle", "Natasha Mccloskey", "Shanti Perkinson", "Valencia Palmisano", "Erin Sorg", "Brad Minger", "Akilah Verde", "Eda Takacs", "Yee Roby", "Christoper Galligan"]
+let dataLock = NSLock()
 
 func randomNames(count: Int) -> [String]
 {
@@ -60,6 +61,17 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
     }
     var sortedKeys: [String]!
     var predicate: NSPredicate?
+    var isApplyingPredicate = false {
+        didSet {
+            if let predicate = predicateToApply where !isApplyingPredicate
+            {
+                self.predicate = predicate
+                self.predicateToApply = nil
+                applyPredicate()
+            }
+        }
+    }
+    var predicateToApply: NSPredicate?
     
     override func viewDidLoad()
     {
@@ -96,6 +108,8 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
     
     private func applyPredicate()
     {
+        isApplyingPredicate = true
+        
         let filteredNames: [String]
         if let pred = predicate
         {
@@ -122,13 +136,17 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
             }
         }
         
+        objc_sync_enter(dataLock)
         let oldSections = self.sections
         let oldSortedKeys = sortedKeys
         self.sections = sections
+        objc_sync_exit(dataLock)
         
         if tableView.numberOfSections == 0
         {
-            tableView.reloadData()
+            tableView.reloadDataWithCompletion { finished in
+                self.isApplyingPredicate = false
+            }
         }
         else
         {
@@ -177,7 +195,6 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
                 }
             }
             
-            UIView.setAnimationsEnabled(false)
             tableView.beginUpdates()
             if indexPathsToDelete.count > 0
             {
@@ -195,8 +212,9 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
             {
                 tableView.insertRowsAtIndexPaths(indexPathsToInsert, withRowAnimation: .None)
             }
-            tableView.endUpdates()
-            UIView.setAnimationsEnabled(true)
+            tableView.endUpdatesAnimated(true) { finished in
+                self.isApplyingPredicate = false
+            }
         }
     }
     
@@ -215,7 +233,7 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
         return sortedKeys[section]
     }
     
-    func tableView(tableView: ASTableView!, nodeForRowAtIndexPath indexPath: NSIndexPath!) -> ASCellNode!
+    func tableView(tableView: ASTableView, nodeForRowAtIndexPath indexPath: NSIndexPath) -> ASCellNode
     {
         let node = ASTextCellNode()
         node.text = sections[sortedKeys[indexPath.section]]![indexPath.row]
@@ -229,8 +247,20 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
         return cell
     }
     
+    func tableViewLockDataSource(tableView: ASTableView)
+    {
+        objc_sync_enter(dataLock)
+    }
+    
+    func tableViewUnlockDataSource(tableView: ASTableView)
+    {
+        objc_sync_exit(dataLock)
+    }
+    
     func searchBar(searchBar: UISearchBar, textDidChange searchText: String)
     {
+        predicateToApply = nil
+        
         let words = searchText.componentsSeparatedByCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet())
         var subpredicates = [NSPredicate]()
         for word in words
@@ -241,8 +271,16 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
             }
             subpredicates.append(NSPredicate(format: "SELF contains[cd] %@", word))
         }
-        predicate = NSCompoundPredicate(andPredicateWithSubpredicates: subpredicates)
-        applyPredicate()
+        let newPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: subpredicates)
+        
+        if isApplyingPredicate
+        {
+            predicateToApply = newPredicate
+        }
+        else
+        {
+            predicate = newPredicate
+            applyPredicate()
+        }
     }
 }
-
