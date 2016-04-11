@@ -16,7 +16,6 @@ import AsyncDisplayKit
  */
 
 let sectionTitles = [UITableViewIndexSearch, "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-let data = randomNames(1000)
 let realNames = ["Victoria Graden", "Cheree Sherk", "Jorge Darcy", "Nedra Noles", "Lan Proctor", "Forrest Strain", "Erlinda Worthy", "Jimmy Slezak", "Fe Norling", "Tinisha Pichardo", "Bethanie Larochelle", "Natasha Mccloskey", "Shanti Perkinson", "Valencia Palmisano", "Erin Sorg", "Brad Minger", "Akilah Verde", "Eda Takacs", "Yee Roby", "Christoper Galligan"]
 let dataLock = NSLock()
 
@@ -51,6 +50,8 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
     var tableView: ASTableView!
 #endif
     
+    let data = randomNames(10)
+    
     // section title, [name]
     private var sections = [String : [String]]() {
         didSet {
@@ -76,6 +77,7 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
     override func viewDidLoad()
     {
         super.viewDidLoad()
+        title = "Search"
         
         searchBar = UISearchBar()
         searchBar.translatesAutoresizingMaskIntoConstraints = false
@@ -87,7 +89,7 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
         tableView.dataSource = self
         tableView.delegate = self
 #else
-        tableView = ASTableView(frame: self.view.bounds, style: .Plain, asyncDataFetching: true)
+        tableView = ASTableView(frame: self.view.bounds, style: .Plain)
         tableView.asyncDataSource = self
         tableView.asyncDelegate = self
 #endif
@@ -144,8 +146,8 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
         
         if tableView.numberOfSections == 0
         {
-            tableView.reloadDataWithCompletion { finished in
-                self.isApplyingPredicate = false
+            tableView.reloadDataWithCompletion { [weak self] finished in
+                self?.isApplyingPredicate = false
             }
         }
         else
@@ -212,8 +214,8 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
             {
                 tableView.insertRowsAtIndexPaths(indexPathsToInsert, withRowAnimation: .None)
             }
-            tableView.endUpdatesAnimated(true) { finished in
-                self.isApplyingPredicate = false
+            tableView.endUpdatesAnimated(true) { [weak self] finished in
+                self?.isApplyingPredicate = false
             }
         }
     }
@@ -235,7 +237,7 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
     
     func tableView(tableView: ASTableView, nodeForRowAtIndexPath indexPath: NSIndexPath) -> ASCellNode
     {
-        let node = ASTextCellNode()
+        let node = ASTextCellNode(attributes: [NSFontAttributeName : UIFont.systemFontOfSize(UIFont.labelFontSize())], insets: UIEdgeInsetsMake(16, 16, 16, 16))
         node.text = sections[sortedKeys[indexPath.section]]![indexPath.row]
         return node
     }

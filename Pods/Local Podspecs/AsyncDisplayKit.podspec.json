@@ -1,6 +1,6 @@
 {
   "name": "AsyncDisplayKit",
-  "version": "1.9.3",
+  "version": "1.9.8",
   "license": {
     "type": "BSD"
   },
@@ -12,18 +12,21 @@
   "summary": "Smooth asynchronous user interfaces for iOS apps.",
   "source": {
     "git": "https://github.com/facebook/AsyncDisplayKit.git",
-    "tag": "1.9.3"
+    "tag": "1.9.7.1"
   },
   "documentation_url": "http://asyncdisplaykit.org/appledoc/",
   "public_header_files": [
     "AsyncDisplayKit/*.h",
     "AsyncDisplayKit/Details/**/*.h",
     "AsyncDisplayKit/Layout/*.h",
-    "Base/*.h"
+    "Base/*.h",
+    "AsyncDisplayKit/TextKit/ASTextNodeTypes.h",
+    "AsyncDisplayKit/TextKit/ASTextKitComponents.h"
   ],
   "source_files": [
     "AsyncDisplayKit/**/*.{h,m,mm}",
-    "Base/*.{h,m}"
+    "Base/*.{h,m}",
+    "AsyncDisplayKit/TextKit/*.h"
   ],
   "frameworks": "AssetsLibrary",
   "weak_frameworks": [
@@ -35,6 +38,7 @@
     "AsyncDisplayKit/Details/ASDealloc2MainObject.h",
     "AsyncDisplayKit/Details/ASDealloc2MainObject.m"
   ],
+  "default_subspecs": "PINRemoteImage",
   "social_media_url": "https://twitter.com/fbOpenSource",
   "libraries": "c++",
   "pod_target_xcconfig": {
@@ -53,6 +57,20 @@
         "AsyncDisplayKit/Details/ASDealloc2MainObject.h",
         "AsyncDisplayKit/Details/ASDealloc2MainObject.m"
       ]
+    },
+    {
+      "name": "PINRemoteImage",
+      "xcconfig": {
+        "GCC_PREPROCESSOR_DEFINITIONS": "$(inherited) PIN_REMOTE_IMAGE=1"
+      },
+      "dependencies": {
+        "PINRemoteImage/iOS": [
+          ">= 2.1.2"
+        ],
+        "AsyncDisplayKit/ASDealloc2MainObject": [
+
+        ]
+      }
     }
   ]
 }

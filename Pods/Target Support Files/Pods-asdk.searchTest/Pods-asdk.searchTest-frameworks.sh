@@ -84,8 +84,12 @@ strip_invalid_archs() {
 
 
 if [[ "$CONFIGURATION" == "Debug" ]]; then
-  install_framework "Pods-asdk.searchTest/AsyncDisplayKit.framework"
+  install_framework "$CONFIGURATION_BUILD_DIR/AsyncDisplayKit/AsyncDisplayKit.framework"
+  install_framework "$CONFIGURATION_BUILD_DIR/PINCache/PINCache.framework"
+  install_framework "$CONFIGURATION_BUILD_DIR/PINRemoteImage/PINRemoteImage.framework"
 fi
 if [[ "$CONFIGURATION" == "Release" ]]; then
-  install_framework "Pods-asdk.searchTest/AsyncDisplayKit.framework"
+  install_framework "$CONFIGURATION_BUILD_DIR/AsyncDisplayKit/AsyncDisplayKit.framework"
+  install_framework "$CONFIGURATION_BUILD_DIR/PINCache/PINCache.framework"
+  install_framework "$CONFIGURATION_BUILD_DIR/PINRemoteImage/PINRemoteImage.framework"
 fi

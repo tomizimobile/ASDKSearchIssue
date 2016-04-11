@@ -8,8 +8,6 @@
  *
  */
 
-#import "ASStackLayoutSpec.h"
-
 #import <numeric>
 #import <vector>
 
@@ -19,7 +17,6 @@
 #import "ASLayoutSpecUtilities.h"
 #import "ASStackBaselinePositionedLayout.h"
 #import "ASStackLayoutSpecUtilities.h"
-#import "ASStackPositionedLayout.h"
 #import "ASStackUnpositionedLayout.h"
 #import "ASThread.h"
 
@@ -197,6 +194,15 @@
   } else {
     _justifyContent = justifyContent(_verticalAlignment, _justifyContent);
   }
+}
+
+@end
+
+@implementation ASStackLayoutSpec (ASEnvironment)
+
+- (BOOL)supportsUpwardPropagation
+{
+  return NO;
 }
 
 @end
