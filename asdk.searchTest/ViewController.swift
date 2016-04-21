@@ -50,7 +50,7 @@ class ViewController: UIViewController, ASTableViewDataSource, ASTableViewDelega
     var tableView: ASTableView!
 #endif
     
-    let data = randomNames(10)
+    let data = realNames//randomNames(10)
     
     // section title, [name]
     private var sections = [String : [String]]() {

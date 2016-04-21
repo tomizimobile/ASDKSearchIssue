@@ -83,6 +83,13 @@ BOOL ASDisplayNodeSubclassOverridesSelector(Class subclass, SEL selector)
   return ASSubclassOverridesSelector([ASDisplayNode class], subclass, selector);
 }
 
+// For classes like ASTableNode, ASCollectionNode, ASScrollNode and similar - we have to be sure to set certain properties
+// like setFrame: and setBackgroundColor: directly to the UIView and not apply it to the layer only.
+BOOL ASDisplayNodeNeedsSpecialPropertiesHandlingForFlags(ASDisplayNodeFlags flags)
+{
+  return flags.synchronous && !flags.layerBacked;
+}
+
 _ASPendingState *ASDisplayNodeGetPendingState(ASDisplayNode *node)
 {
   ASDN::MutexLocker l(node->_propertyLock);
@@ -256,7 +263,7 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   _environmentState = ASEnvironmentStateMakeDefault();
 }
 
-- (id)init
+- (instancetype)init
 {
   if (!(self = [super init]))
     return nil;
@@ -266,7 +273,7 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   return self;
 }
 
-- (id)initWithViewClass:(Class)viewClass
+- (instancetype)initWithViewClass:(Class)viewClass
 {
   if (!(self = [super init]))
     return nil;
@@ -280,7 +287,7 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   return self;
 }
 
-- (id)initWithLayerClass:(Class)layerClass
+- (instancetype)initWithLayerClass:(Class)layerClass
 {
   if (!(self = [super init]))
     return nil;
@@ -295,12 +302,12 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   return self;
 }
 
-- (id)initWithViewBlock:(ASDisplayNodeViewBlock)viewBlock
+- (instancetype)initWithViewBlock:(ASDisplayNodeViewBlock)viewBlock
 {
   return [self initWithViewBlock:viewBlock didLoadBlock:nil];
 }
 
-- (id)initWithViewBlock:(ASDisplayNodeViewBlock)viewBlock didLoadBlock:(ASDisplayNodeDidLoadBlock)didLoadBlock
+- (instancetype)initWithViewBlock:(ASDisplayNodeViewBlock)viewBlock didLoadBlock:(ASDisplayNodeDidLoadBlock)didLoadBlock
 {
   if (!(self = [super init]))
     return nil;
@@ -315,12 +322,12 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   return self;
 }
 
-- (id)initWithLayerBlock:(ASDisplayNodeLayerBlock)layerBlock
+- (instancetype)initWithLayerBlock:(ASDisplayNodeLayerBlock)layerBlock
 {
   return [self initWithLayerBlock:layerBlock didLoadBlock:nil];
 }
 
-- (id)initWithLayerBlock:(ASDisplayNodeLayerBlock)layerBlock didLoadBlock:(ASDisplayNodeDidLoadBlock)didLoadBlock
+- (instancetype)initWithLayerBlock:(ASDisplayNodeLayerBlock)layerBlock didLoadBlock:(ASDisplayNodeDidLoadBlock)didLoadBlock
 {
   if (!(self = [super init]))
     return nil;
@@ -681,6 +688,10 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   });
   
   void (^transitionBlock)() = ^{
+    if ([self _shouldAbortTransitionWithID:transitionID]) {
+      return;
+    }
+    
     ASLayout *newLayout;
     {
       ASLayoutableSetCurrentContext(ASLayoutableContextMake(transitionID, NO));
@@ -950,8 +961,8 @@ static ASDisplayNodeMethodOverrides GetASDisplayNodeMethodOverrides(Class c)
   if (self.layerBacked) {
     [_pendingViewState applyToLayer:self.layer];
   } else {
-    BOOL setFrameDirectly = (_flags.synchronous && !_flags.layerBacked);
-    [_pendingViewState applyToView:self.view setFrameDirectly:setFrameDirectly];
+    BOOL specialPropertiesHandling = ASDisplayNodeNeedsSpecialPropertiesHandlingForFlags(_flags);
+    [_pendingViewState applyToView:self.view withSpecialPropertiesHandling:specialPropertiesHandling];
   }
 
   [_pendingViewState clearChanges];
@@ -2599,19 +2610,6 @@ static const char *ASDisplayNodeDrawingPriorityKey = "ASDrawingPriority";
   _flags.isInHierarchy = inHierarchy;
 }
 
-+ (dispatch_queue_t)asyncSizingQueue
-{
-  static dispatch_queue_t asyncSizingQueue = NULL;
-  static dispatch_once_t onceToken;
-  dispatch_once(&onceToken, ^{
-    asyncSizingQueue = dispatch_queue_create("org.AsyncDisplayKit.ASDisplayNode.asyncSizingQueue", DISPATCH_QUEUE_CONCURRENT);
-    // we use the highpri queue to prioritize UI rendering over other async operations
-    dispatch_set_target_queue(asyncSizingQueue, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
-  });
-
-  return asyncSizingQueue;
-}
-
 - (BOOL)_hasTransitionsInProgress
 {
   ASDN::MutexLocker l(_propertyLock);
@@ -2637,33 +2635,6 @@ static const char *ASDisplayNodeDrawingPriorityKey = "ASDrawingPriority";
     _transitionSentinel = [[ASSentinel alloc] init];
   }
   return [_transitionSentinel increment];
-}
-
-// Calls completion with nil to indicated cancellation
-- (void)_enqueueAsyncSizingWithSentinel:(ASSentinel *)sentinel completion:(void(^)(ASDisplayNode *n))completion;
-{
-  int32_t sentinelValue = sentinel.value;
-
-  // This is what we're going to use for sizing. Hope you like it :D
-  CGRect bounds = self.bounds;
-
-  dispatch_async([[self class] asyncSizingQueue], ^{
-    // Check sentinel before, bail early
-    if (sentinel.value != sentinelValue)
-      return dispatch_async(dispatch_get_main_queue(), ^{ completion(nil); });
-
-    [self measure:bounds.size];
-
-    // Check sentinel after, bail early
-    if (sentinel.value != sentinelValue)
-      return dispatch_async(dispatch_get_main_queue(), ^{ completion(nil); });
-
-    // Success; not cancelled
-    dispatch_async(dispatch_get_main_queue(), ^{
-      completion(self);
-    });
-  });
-
 }
 
 - (id<ASLayoutable>)finalLayoutable
@@ -2695,7 +2666,7 @@ static const char *ASDisplayNodeDrawingPriorityKey = "ASDrawingPriority";
 
 - (BOOL)supportsUpwardPropagation
 {
-  return YES;
+  return ASEnvironmentStatePropagationEnabled();
 }
 
 ASEnvironmentLayoutOptionsForwarding
@@ -2717,7 +2688,7 @@ ASEnvironmentLayoutExtensibilityForwarding
 
 - (BOOL)shouldUpdateFocusInContext:(UIFocusUpdateContext *)context
 {
-  return YES;
+  return NO;
 }
 
 - (void)didUpdateFocusInContext:(UIFocusUpdateContext *)context withAnimationCoordinator:(UIFocusAnimationCoordinator *)coordinator
